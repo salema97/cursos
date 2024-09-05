@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../database");
 
-const User = sequelize.define(
-  "User",
+const Product = sequelize.define(
+  "Product",
   {
     id: {
       type: DataTypes.INTEGER,
@@ -10,40 +10,39 @@ const User = sequelize.define(
       allowNull: false,
       primaryKey: true,
     },
-    displayName: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     name: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    email: {
+    description: {
       type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
+      allowNull: true,
     },
-    password: {
+    price: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
+    image: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
-    emailVerified: {
-      type: DataTypes.BOOLEAN,
+    stock: {
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
   },
   {
-    tableName: "Users",
+    tableName: "Products",
   }
 );
 
 sequelize
   .sync()
   .then(() => {
-    console.log('La tabla "Users" ha sido sincronizada');
+    console.log('La tabla "Products" ha sido sincronizada');
   })
   .catch((error) => {
-    "Ocurrió un error en Users: ", console.log(error);
+    "Ocurrió un error en Products: ", console.log(error);
   });
 
-module.exports = User;
+module.exports = Product;

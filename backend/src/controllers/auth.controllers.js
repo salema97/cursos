@@ -81,7 +81,7 @@ const login = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         message:
-          "No se encontró el usuario con eel correo electrónico proporcionado.",
+          "No se encontró el usuario con el correo electrónico proporcionado.",
       });
     }
 

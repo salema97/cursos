@@ -55,7 +55,7 @@ const verifyRole =
   (...requireRoles) =>
   (req, res, next) => {
     try {
-      let token = req.headers["Authorization"];
+      let token = req.headers["authorization"];
 
       if (!token) {
         return res.status(403).json({

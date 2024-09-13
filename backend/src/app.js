@@ -3,6 +3,8 @@ const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
 const AccountRoutes = require("./routes/account.routes");
+const CategoryRoutes = require("./routes/category.routes");
+const ProductRoutes = require("./routes/product.routes");
 const StreamCategoryRoutes = require("./routes/stream.category.routes");
 
 const app = express();
@@ -20,6 +22,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/account", AccountRoutes);
+app.use("/api/category", CategoryRoutes);
+app.use("/api/product", ProductRoutes);
 
 app.use("/socket/category", StreamCategoryRoutes(io));
 

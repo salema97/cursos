@@ -4,6 +4,42 @@ const {
   getFilters,
   formattedProducts,
 } = require("../utils/product.utils");
+const path = require("path");
+const fs = require("fs");
+
+const createProduct = async (req, res) => {
+  try {
+    const { categoryId } = req.body;
+    var createProduct;
+
+    const existCategory = await Category.findOne({ where: { id: categoryId } });
+
+    if (!existCategory) {
+      return res.status(400).json({ message: "La categoría no existe" });
+    }
+
+    if (!req.file) {
+      createProduct = req.body;
+    } else {
+      createProduct = {
+        ...req.body,
+        image: "/uploads/products/images/" + req.file.filename,
+      };
+    }
+
+    const newProduct = await Product.create(createProduct);
+
+    if (!newProduct) {
+      return res.status(400).json({ message: "No se pudo crear el producto" });
+    }
+
+    return res.status(201).json(createProduct);
+  } catch (error) {
+    return res.status(400).json({
+      message: `Ocurrió un error al crear el producto: ${error.message}`,
+    });
+  }
+};
 
 const getAllProducts = async (req, res) => {
   try {
@@ -36,7 +72,7 @@ const getAllProducts = async (req, res) => {
     });
 
     if (products.count <= 0) {
-      res.status(400).json({ message: "No existe ningún producto" });
+      return res.status(400).json({ message: "No existe ningún producto" });
     }
 
     const response = {
@@ -47,12 +83,70 @@ const getAllProducts = async (req, res) => {
       data: formattedProducts(products),
     };
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
-    res.status(400).json({
+    return res.status(400).json({
       message: `Ocurrió un error al obtener los productos: ${error.message}`,
     });
   }
 };
 
-module.exports = { getAllProducts };
+const getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findByPk(id, {
+      include: [
+        {
+          model: Category,
+          as: "category",
+          attributes: ["name"],
+        },
+      ],
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    return res.status(200).json(product);
+  } catch (error) {
+    return res.status(400).json({
+      message: `Ocurrió un error al obtener el producto: ${error.message}`,
+    });
+  }
+};
+
+const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findByPk(id);
+
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    if (product.image) {
+      const existingImagePatch = path.join(__dirname, "../..", product.image);
+      if (fs.existsSync(existingImagePatch)) {
+        fs.unlinkSync(existingImagePatch);
+      }
+    }
+
+    await product.destroy();
+
+    return res.status(200).json({ message: "Producto eliminado" });
+  } catch (error) {
+    return res.status(400).json({
+      message: `Ocurrió un error al eliminar el producto: ${error.message}`,
+    });
+  }
+};
+
+module.exports = {
+  getAllProducts,
+  createProduct,
+  getProductById,
+  deleteProduct,
+};

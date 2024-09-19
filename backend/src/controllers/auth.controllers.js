@@ -1,7 +1,10 @@
 const { User, Role, Device } = require("../models/associations");
 const Auth = require("../middlewares/auth.jwt");
 const sequelize = require("../database");
-const { sendVerifyEmail } = require("../utils/email.utils");
+const {
+  sendVerifyEmail,
+  sendResetPasswordEmail,
+} = require("../utils/email.utils");
 
 const register = async (req, res) => {
   const transaction = await sequelize.transaction();
@@ -159,4 +162,69 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-module.exports = { register, login, verifyEmail };
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({
+        message:
+          "No se encontró el usuario con el correo electrónico proporcionado.",
+      });
+    }
+
+    const token = await Auth.createTempToken(user);
+
+    sendResetPasswordEmail(email, token);
+
+    res.status(200).json({
+      message:
+        "Se ha enviado un correo electrónico para restablecer la contraseña.",
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: `Ocurrió un error al enviar el correo para restablecer la contraseña: ${error.message}`,
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.query;
+    const { password } = req.body;
+
+    const payload = Auth.verifyToken(token);
+    if (!payload) {
+      return res.status(401).json({
+        message: "El token proporcionado no es válido.",
+      });
+    }
+
+    const user = await User.findOne({ where: { email: payload.email } });
+    if (!user) {
+      return res.status(404).json({
+        message: "No se encontró el usuario asociado al token proporcionado.",
+      });
+    }
+
+    const hashedPassword = await Auth.encryptPassword(password);
+    await user.update({ password: hashedPassword });
+
+    res.status(200).json({
+      message: "Contraseña restablecida correctamente.",
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: `Ocurrió un error al restablecer la contraseña: ${error.message}`,
+    });
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
+};

@@ -1,4 +1,5 @@
 const { Op } = require("sequelize");
+const fs = require("fs");
 
 const getPagination = (pageNumber, pageSize) => {
   const limit = Math.min(pageSize, 50);
@@ -39,54 +40,63 @@ const validateProductData = (req, res, next) => {
   const { name, price, stock, categoryId } = req.body;
 
   if (!name) {
+    deleteUploadProductImage(req.file.path);
     return res.status(400).json({
       message: "El campos name es obligatorio",
     });
   }
 
   if (!price) {
+    deleteUploadProductImage(req.file.path);
     return res.status(400).json({
       message: "El campos price es obligatorio",
     });
   }
 
   if (!stock) {
+    deleteUploadProductImage(req.file.path);
     return res.status(400).json({
       message: "El campos stock es obligatorio",
     });
   }
 
   if (!categoryId) {
+    deleteUploadProductImage(req.file.path);
     return res.status(400).json({
       message: "El ID de la categoría es obligatorio",
     });
   }
 
   if (typeof name !== "string" || name.length < 3) {
+    deleteUploadProductImage(req.file.path);
     return res.status(400).json({
       message: "El campo name debe ser un string con al menos 3 caracteres",
     });
   }
 
   if (isNaN(price.replace(",", "."))) {
+    deleteUploadProductImage(req.file.path);
     return res.status(400).json({
       message: "El precio no es un número valido",
     });
   }
 
   if (isNaN(stock)) {
+    deleteUploadProductImage(req.file.path);
     return res.status(400).json({
       message: "El stock no es un número valido",
     });
   }
 
   if (isNaN(price.replace(",", ".")) || price <= 0) {
+    deleteUploadProductImage(req.file.path);
     return res.status(400).json({
       message: "El campo price debe ser un número mayor a 0",
     });
   }
 
   if (isNaN(stock) || stock < 0) {
+    deleteUploadProductImage(req.file.path);
     return res.status(400).json({
       message: "El campo stock debe ser un número mayor o igual a 0",
     });
@@ -94,6 +104,7 @@ const validateProductData = (req, res, next) => {
 
   const priceRegex = /^\d{1,10}(\.\d{1,2})?$/;
   if (!priceRegex.test(price.replace(",", "."))) {
+    deleteUploadProductImage(req.file.path);
     return res.status(400).json({
       message: "El precio no puede tener mas de 2 decimales",
     });
@@ -102,9 +113,19 @@ const validateProductData = (req, res, next) => {
   next();
 };
 
+const deleteUploadProductImage = (path) => {
+  fs.unlink(path, (err) => {
+    if (err) {
+      console.error(`Error al eliminar la imagen: ${err}`);
+      return;
+    }
+  });
+};
+
 module.exports = {
   getPagination,
   getFilters,
   formattedProducts,
   validateProductData,
+  deleteUploadProductImage,
 };

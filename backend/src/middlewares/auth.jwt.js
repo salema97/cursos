@@ -40,6 +40,31 @@ const createToken = async (user) => {
   }
 };
 
+const createTempToken = async (user) => {
+  try {
+    const roles = await user.getRoles();
+    const rolesNames = roles.map((role) => role.name);
+
+    const payload = {
+      displayName: user.displayName,
+      email: user.email,
+      roles: rolesNames,
+    };
+
+    const secretWordToken = process.env.SECRET_WORD_TOKEN;
+    const options = {
+      expiresIn: process.env.EXPIRATION_TEMP_TOKEN,
+      issuer: process.env.ISSUER_TOKEN,
+    };
+
+    const token = jwt.sign(payload, secretWordToken, options);
+
+    return token;
+  } catch (error) {
+    console.log("Ocurrió un error al crear el token: ", error);
+  }
+};
+
 const verifyToken = (token) => {
   try {
     const secretWordToken = process.env.SECRET_WORD_TOKEN;
@@ -108,6 +133,7 @@ const verifyPassword = async (password, hashedPassword) => {
 module.exports = {
   encryptPassword,
   createToken,
+  createTempToken,
   verifyToken,
   verifyRole,
   verifyPassword,

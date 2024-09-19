@@ -3,6 +3,7 @@ const {
   getPagination,
   getFilters,
   formattedProducts,
+  deleteUploadProductImage,
 } = require("../utils/product.utils");
 const path = require("path");
 const fs = require("fs");
@@ -15,6 +16,7 @@ const createProduct = async (req, res) => {
     const existCategory = await Category.findOne({ where: { id: categoryId } });
 
     if (!existCategory) {
+      deleteUploadProductImage(req.file.path);
       return res.status(400).json({ message: "La categoría no existe" });
     }
 
@@ -30,11 +32,13 @@ const createProduct = async (req, res) => {
     const newProduct = await Product.create(createProduct);
 
     if (!newProduct) {
+      deleteUploadProductImage(req.file.path);
       return res.status(400).json({ message: "No se pudo crear el producto" });
     }
 
     return res.status(201).json(createProduct);
   } catch (error) {
+    deleteUploadProductImage(req.file.path);
     return res.status(400).json({
       message: `Ocurrió un error al crear el producto: ${error.message}`,
     });
@@ -117,6 +121,49 @@ const getProductById = async (req, res) => {
   }
 };
 
+const updateProduct = async (req, res) => {
+  try {
+    const existingProduct = await Product.findByPk(req.params.id);
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    let newImagePath = existingProduct.image;
+    if (req.file) {
+      if (existingProduct.image) {
+        const existingImagePatch = path.join(
+          __dirname,
+          "../..",
+          existingProduct.image
+        );
+        if (fs.existsSync(existingImagePatch)) {
+          fs.unlinkSync(existingImagePatch);
+        }
+      }
+      newImagePath = "/uploads/products/images/" + req.file.filename;
+    }
+
+    const product = {
+      ...req.body,
+      image: newImagePath,
+    };
+
+    const updateProduct = await existingProduct.update(product);
+
+    if (!updateProduct) {
+      return res
+        .status(400)
+        .json({ message: "No se pudo actualizar el producto" });
+    }
+
+    return res.status(200).json(updateProduct);
+  } catch (error) {
+    return res.status(400).json({
+      message: `Ocurrió un error al actualizar el producto: ${error.message}`,
+    });
+  }
+};
+
 const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -148,5 +195,6 @@ module.exports = {
   getAllProducts,
   createProduct,
   getProductById,
+  updateProduct,
   deleteProduct,
 };

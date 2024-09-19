@@ -142,4 +142,32 @@ const validateLogin = (req, res, next) => {
   }
 };
 
-module.exports = { validateRegister, validateLogin };
+const validatePassword = (req, res, next) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({
+        message: "Falta la contraseña del usuario",
+      });
+    }
+
+    const passwordRegExp = new RegExp(/^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/);
+
+    if (!passwordRegExp.test(password)) {
+      return res.status(400).json({
+        message:
+          "La contraseña proporcionada no es válida. La contraseña debe tener al menos 8 caracteres, una letra mayúscula y un número.",
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error(
+      "Ocurrió un error en la validación de la contraseña del usuario: ",
+      error
+    );
+  }
+};
+
+module.exports = { validateRegister, validateLogin, validatePassword };
